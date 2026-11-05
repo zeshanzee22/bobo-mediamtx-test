@@ -1,0 +1,130 @@
+###############################################
+# BOBO AI BABY MONITOR
+# MEDIAMTX - HETZNER PRODUCTION
+#
+# Baby: RTMP Publisher
+# Parent/Viewer: WebRTC / WHEP
+# Authentication: Django Cloud Run
+# Room lifecycle: Django webhooks
+###############################################
+
+###############################################
+# GENERAL
+###############################################
+
+logLevel: info
+logDestinations: [stdout]
+
+readTimeout: 10s
+writeTimeout: 10s
+writeQueueSize: 1024
+
+###############################################
+# EXTERNAL DJANGO AUTHENTICATION
+###############################################
+authMethod: http
+authHTTPAddress: https://bobo-backend-941381043431.us-central1.run.app/mediamtx/auth/
+
+# Never exclude publish or read.
+# Django validates credentials, room access
+# and subscription/trial entitlement.
+authHTTPExclude:
+  - action: api
+  - action: metrics
+  - action: pprof
+
+###############################################
+# RTSP
+###############################################
+
+rtsp: true
+rtspAddress: :8554
+
+# Current Bobo architecture uses TCP RTSP.
+rtspTransports: [tcp]
+
+###############################################
+# RTMP
+###############################################
+
+rtmp: true
+rtmpAddress: :1935
+
+# Compatibility with existing Baby RTMP flow.
+# Plain RTMP is not encrypted.
+# Secure publishing must be addressed
+# before public production launch.
+rtmpEncryption: "no"
+
+###############################################
+# WEBRTC / WHEP - PARENT & VIEWER
+###############################################
+
+webrtc: true
+webrtcAddress: :8889
+
+# TLS will terminate at a reverse proxy.
+# Port 8889 must not be directly public.
+webrtcEncryption: false
+
+# WEBRTC ICE / MEDIA
+# WebRTC media is encrypted independently.
+webrtcLocalUDPAddress: :8189
+
+# Disabled unless required as fallback.
+webrtcLocalTCPAddress: ""
+
+###############################################
+# WEBRTC PUBLIC NETWORK
+###############################################
+
+webrtcIPsFromInterfaces: false
+
+# Replaced at deployment with the Hetzner
+# public IP using MTX_WEBRTCADDITIONALHOSTS.
+webrtcAdditionalHosts: []
+
+# Not necessary when direct UDP connectivity works.
+# TURN can be added later if networks require it.
+# STUN server
+webrtcICEServers2:
+  - url: stun:stun.l.google.com:19302
+
+###############################################
+# WEBRTC TIMEOUTS
+###############################################
+
+webrtcHandshakeTimeout: 10s
+webrtcTrackGatherTimeout: 5s
+webrtcSTUNGatherTimeout: 5s
+
+###############################################
+# SRT & HLS & MOQ- NOT USED
+###############################################
+# Disable unused protocols
+hls: false
+srt: false
+moq: false
+
+###############################################
+# DEFAULT ROOM SETTINGS
+###############################################
+
+pathDefaults:
+  # Each authorized Baby publishes to its room ID.
+  source: publisher
+
+  # A newly authenticated publisher can replace
+  # an existing connection for the same room.
+  overridePublisher: true
+
+  # Bobo currently does not record streams.
+  record: false
+
+###############################################
+# DYNAMIC ROOM PATHS
+###############################################
+
+paths:
+  all_others:
+    source: publisher

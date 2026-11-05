@@ -1,0 +1,30 @@
+
+services:
+  mediamtx:
+    image: bluenviron/mediamtx:1.21.3
+    container_name: bobo-mediamtx
+    restart: unless-stopped
+
+    ports:
+      # Baby  publishing
+      - "1935:1935/tcp"
+      - "8554:8554/tcp"
+
+      # WebRTC/WHEP signaling
+      # Accessible only locally to the HTTPS proxy
+      - "127.0.0.1:8889:8889/tcp"
+
+      # WebRTC encrypted media (ICE)
+      - "8189:8189/udp"
+
+    environment:
+      MTX_WEBRTCADDITIONALHOSTS: "${HETZNER_PUBLIC_IP:?Set HETZNER_PUBLIC_IP in .env}"
+
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml:ro
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
